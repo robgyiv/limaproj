@@ -1,13 +1,3 @@
 # base.yaml
 arch: null
 vmType: null
-
-cpus: 4
-memory: "6GiB"
-disk: "30GiB"
-
-# IMPORTANT: never mount home by default
-mounts: []
-
-# Provision hook (scripts can be expanded per-policy)
-provision: []
