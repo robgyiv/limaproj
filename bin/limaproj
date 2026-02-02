@@ -5,7 +5,7 @@ from pathlib import Path
 from textwrap import dedent
 import sys
 
-DEFAULT_IMAGE = "https://cloud.debian.org/cdimage/cloud/trixie/20260112-2355/debian-13-generic-amd64-20260112-2355.qcow2"
+DEFAULT_IMAGE = "https://cloud.debian.org/cdimage/cloud/trixie/20260112-2355/debian-13-generic-arm64-20260112-2355.qcow2"
 
 
 def run(cmd):
@@ -24,7 +24,7 @@ def main():
     c.add_argument("name", help="VM name, e.g. proj-foo")
     c.add_argument("--policy", choices=["trusted", "untrusted", "airgap"], default="trusted")
     c.add_argument("--repo", default=None, help="Repo path on host (default: current directory)")
-    c.add_argument("--image", default=DEFAULT_IMAGE, help="Cloud image URL (default: Debian 13.3 generic)")
+    c.add_argument("--image", default=DEFAULT_IMAGE, help="Cloud image URL (default: Debian 13.3 generic arm64)")
     c.add_argument("--cpus", default="4")
     c.add_argument("--memory", default="6GiB")
     c.add_argument("--disk", default="30GiB")

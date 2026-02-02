@@ -27,6 +27,9 @@ source ~/.config/fish/config.fish
 From inside your repo:
 
 ```bash
+limaproj create proj-foo --policy untrusted
+
+# Custom image
 limaproj create proj-foo --policy untrusted \
   --image https://cloud.debian.org/cdimage/cloud/trixie/20260112-2355/debian-13-generic-arm64-20260112-2355.qcow2
 ```
