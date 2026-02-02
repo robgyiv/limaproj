@@ -1,0 +1,12 @@
+# airgap.yaml
+networks: []
+
+provision:
+  - mode: system
+    script: |
+      set -eux
+      # In airgap you usually want minimal changes.
+      if command -v apt-get >/dev/null 2>&1; then
+        apt-get update || true
+        apt-get install -y git || true
+      fi

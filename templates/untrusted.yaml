@@ -1,0 +1,9 @@
+# untrusted.yaml
+provision:
+  - mode: system
+    script: |
+      set -eux
+      if command -v apt-get >/dev/null 2>&1; then
+        apt-get update
+        apt-get install -y git ca-certificates curl
+      fi
