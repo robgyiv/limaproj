@@ -13,7 +13,7 @@ It mounts only the repo into the VM at `/workspace`.
 Add the wrapper to your PATH (fish):
 
 ```fish
-set -gx PATH $HOME/.lima/_config/limaproj/limaproj/bin $PATH
+set -gx PATH $HOME/.lima/_config/limaproj/bin $PATH
 ```
 
 Reload:
@@ -55,10 +55,10 @@ cd /workspace
 
 Templates live in:
 
-- `~/.lima/_config/limaproj/limaproj/templates/base.yaml`
-- `~/.lima/_config/limaproj/limaproj/templates/trusted.yaml`
-- `~/.lima/_config/limaproj/limaproj/templates/untrusted.yaml`
-- `~/.lima/_config/limaproj/limaproj/templates/airgap.yaml`
+- `~/.lima/_config/limaproj/templates/base.yaml`
+- `~/.lima/_config/limaproj/templates/trusted.yaml`
+- `~/.lima/_config/limaproj/templates/untrusted.yaml`
+- `~/.lima/_config/limaproj/templates/airgap.yaml`
 
 ## Notes
 

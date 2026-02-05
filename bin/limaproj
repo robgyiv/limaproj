@@ -6,11 +6,19 @@ from textwrap import dedent
 import sys
 import re
 from collections import OrderedDict
+import shlex
 
 DEFAULT_IMAGE = "https://cloud.debian.org/cdimage/cloud/trixie/20260112-2355/debian-13-generic-arm64-20260112-2355.qcow2"
 
 
-def run(cmd, ignore_missing_instance=False):
+def run(cmd, ignore_missing_instance=False, interactive=False):
+    if interactive:
+        # Pass through TTY for interactive commands like "limactl shell".
+        rc = subprocess.call(cmd)
+        if rc != 0:
+            raise SystemExit(rc)
+        return
+
     result = subprocess.run(cmd, text=True, capture_output=True)
     if result.returncode == 0:
         return
@@ -90,6 +98,11 @@ def main():
     s.add_argument("name")
     sh = sub.add_parser("shell")
     sh.add_argument("name")
+    sh.add_argument(
+        "--cwd",
+        default=None,
+        help="Start shell in this directory inside the VM (e.g. /workspace)",
+    )
     st = sub.add_parser("stop")
     st.add_argument("name")
     d = sub.add_parser("delete", help="Delete a VM instance")
@@ -172,7 +185,18 @@ def main():
         return
 
     if args.cmd in ("start", "shell", "stop", "delete"):
-        run(["limactl", args.cmd, args.name], ignore_missing_instance=args.cmd == "delete")
+        if args.cmd == "shell" and args.cwd:
+            workdir = shlex.quote(args.cwd)
+            shell_cmd = f'cd {workdir} && exec /bin/bash -l'
+            cmd = ["limactl", "shell", args.name, "--", "/bin/sh", "-lc", shell_cmd]
+        else:
+            cmd = ["limactl", args.cmd, args.name]
+
+        run(
+            cmd,
+            ignore_missing_instance=args.cmd == "delete",
+            interactive=args.cmd == "shell",
+        )
         return
 
 
