@@ -1,7 +1,7 @@
 # limaproj (Lima bootstrap)
 
 This setup keeps your source on the host and runs builds/tests inside a per-project Lima VM.
-It mounts only the repo into the VM at `/workspace`.
+It mounts only the active directory or repo the command is run from on the host into the VM at `/workspace`.
 
 ## Prereqs
 

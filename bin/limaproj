@@ -174,7 +174,7 @@ def main():
         memory: "{args.memory}"
         disk: "{args.disk}"
 
-        # Mount ONLY the repo for Option A
+        # Mount ONLY the repo this project was initialised from
         mounts:
           - location: "{repo}"
             mountPoint: "{DEFAULT_SHELL_CWD}"
