@@ -124,7 +124,7 @@ def main():
 
     args = p.parse_args()
 
-    root = Path.home() / ".lima" / "_config" / "limaproj" / "limaproj"
+    root = Path.home() / ".lima" / "_config" / "limaproj"
     templates = root / "templates"
     projects = root / "projects"
     projects.mkdir(parents=True, exist_ok=True)
