@@ -94,7 +94,7 @@ def main():
     c = sub.add_parser("create", help="Create a per-project Lima VM")
     c.add_argument("name", help="VM name, e.g. proj-foo")
     c.add_argument(
-        "--policy", choices=["trusted", "untrusted", "airgap"], default="trusted"
+        "--policy", choices=["trusted", "untrusted", "airgap", "devbox"], default="trusted"
     )
     c.add_argument(
         "--repo", default=None, help="Repo path on host (default: current directory)"
