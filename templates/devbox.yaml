@@ -54,11 +54,24 @@ provision:
       # --- python -> python3 symlink ---
       ln -sf /usr/bin/python3 /usr/local/bin/python
 
-      # Add the first real (non-system) user to the docker group.
-      # Lima mirrors the host macOS UID (typically 501) into the VM,
-      # so we cannot assume UID 1000 — find the user dynamically instead.
-      LIMA_USER="$(awk -F: '$3>=500 && $3<65534 {print $1; exit}' /etc/passwd)"
+      # Add the Lima user to the docker group.
+      # Lima mirrors the host macOS UID into the VM (typically 501, not 1000).
+      # Match on login shell instead of UID range — only real interactive users
+      # have /bin/bash, system users have /usr/sbin/nologin regardless of UID.
+      LIMA_USER="$(awk -F: '$7=="/bin/bash" && $1!="root" {print $1; exit}' /etc/passwd)"
       usermod -aG docker "$LIMA_USER"
+
+      # Lima SSH sessions are non-login (Class=manager-early), so PAM never
+      # loads supplementary groups from /etc/group into the session credentials.
+      # usermod correctly adds the user to the docker group, but the running
+      # session only sees the primary group. Fix: override docker.socket to use
+      # the Lima user's primary group (which is always in the session) instead
+      # of the docker group.
+      mkdir -p /etc/systemd/system/docker.socket.d
+      printf '[Socket]\nSocketGroup=%s\n' "$LIMA_USER" \
+        > /etc/systemd/system/docker.socket.d/override.conf
+      systemctl daemon-reload
+      systemctl restart docker.socket
 
   - mode: user
     script: |
