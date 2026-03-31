@@ -108,6 +108,9 @@ def main():
     c.add_argument("--memory", default="6GiB")
     c.add_argument("--disk", default="30GiB")
 
+    u = sub.add_parser("use", help="Set active devbox VM for Neovim remote LSP")
+    u.add_argument("name", help="VM name, e.g. nory-challenge")
+
     s = sub.add_parser("start")
     s.add_argument("name")
     sh = sub.add_parser("shell")
@@ -194,6 +197,57 @@ def main():
         # Create VM from file + ensure name
         run(["limactl", "create", "--name", name, str(out_yaml)])
         print(f"Created {name} ({args.policy}) mounting {repo} -> {DEFAULT_SHELL_CWD}")
+        return
+
+    if args.cmd == "use":
+        name = args.name
+        ssh_config_path = Path.home() / ".lima" / name / "ssh.config"
+        if not ssh_config_path.exists():
+            print(f"No ssh.config found for VM '{name}' at {ssh_config_path}", file=sys.stderr)
+            sys.exit(2)
+
+        text = ssh_config_path.read_text(encoding="utf-8")
+        hostname = port = identity_file = user = None
+        for line in text.splitlines():
+            s = line.strip()
+            if s.startswith("Hostname "):
+                hostname = s.split(None, 1)[1]
+            elif s.startswith("Port "):
+                port = s.split(None, 1)[1]
+            elif s.startswith("IdentityFile "):
+                identity_file = s.split(None, 1)[1].strip('"')
+            elif s.startswith("User "):
+                user = s.split(None, 1)[1]
+
+        if not all([hostname, port, identity_file, user]):
+            print(f"Could not parse all fields from {ssh_config_path}", file=sys.stderr)
+            sys.exit(2)
+
+        conf_d = Path.home() / ".ssh" / "conf.d"
+        conf_d.mkdir(parents=True, exist_ok=True)
+
+        devbox_conf = conf_d / "lima-devbox"
+        devbox_conf.write_text(
+            dedent(f"""\
+            Host lima-devbox
+              Hostname {hostname}
+              Port {port}
+              User {user}
+              IdentityFile {identity_file}
+              StrictHostKeyChecking no
+              UserKnownHostsFile /dev/null
+              IdentitiesOnly yes
+            """),
+            encoding="utf-8",
+        )
+
+        ssh_config = Path.home() / ".ssh" / "config"
+        include_line = "Include ~/.ssh/conf.d/lima-devbox"
+        existing = ssh_config.read_text(encoding="utf-8") if ssh_config.exists() else ""
+        if include_line not in existing:
+            ssh_config.write_text(include_line + "\n\n" + existing, encoding="utf-8")
+
+        print(f"Active devbox: {name} → lima-devbox ({hostname}:{port})")
         return
 
     if args.cmd in ("start", "shell", "stop", "delete"):

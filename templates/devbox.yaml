@@ -79,3 +79,10 @@ provision:
 
       # --- pnpm via corepack ---
       corepack prepare pnpm@latest --activate
+
+      # Set up pnpm home dir and PATH for non-interactive use
+      pnpm setup
+
+      # LSP servers
+      uv tool install pyright
+      pnpm add -g typescript typescript-language-server

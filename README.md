@@ -72,6 +72,81 @@ Templates live in:
 - `~/.lima/_config/limaproj/templates/airgap.yaml`
 - `~/.lima/_config/limaproj/templates/devbox.yaml`
 
+## Neovim remote LSP (devbox policy)
+
+The `devbox` policy provisions LSP servers inside the VM. You can point your local Neovim at them
+over SSH so the LSP runs where the code is — no local Python or Node toolchain required.
+
+### One-time setup
+
+**1. Provision a devbox VM** (if you haven't already):
+
+```bash
+limaproj create my-devbox --policy devbox
+limaproj start my-devbox
+```
+
+**2. Activate it as the Neovim target:**
+
+```bash
+limaproj use my-devbox
+```
+
+This writes `~/.ssh/conf.d/lima-devbox` with the VM's current SSH coordinates and ensures
+`~/.ssh/config` includes it. Re-run `limaproj use` whenever you switch VMs or restart one
+(the port changes on restart).
+
+**3. Install the Neovim plugin file** (already written to `~/.config/nvim/lua/plugins/remote-lsp.lua`).
+If your config uses LazyVim or a similar framework, it will be picked up automatically.
+
+### Workflow
+
+Each time you start a session:
+
+```bash
+limaproj start my-devbox   # if not already running
+limaproj use my-devbox     # refresh SSH coords (port may have changed)
+```
+
+Then open Neovim on the host as normal — LSP commands (`gd`, `K`, diagnostics, etc.) work
+transparently. The `ssh lima-devbox` invocation in each LSP `cmd` is what routes the stdio
+protocol through to the VM.
+
+**Switching projects:**
+
+```bash
+limaproj use other-devbox
+```
+
+All Neovim LSP clients share the single `lima-devbox` alias; switching it is enough.
+
+### What's installed on the VM
+
+| Server | Binary path |
+|---|---|
+| `pyright` | `/home/robbie.guest/.local/bin/pyright-langserver` |
+| `typescript-language-server` | `/home/robbie.guest/.local/share/pnpm/typescript-language-server` |
+
+The paths are stable across all devbox VMs — Lima always uses `<username>.guest` as the home dir.
+
+### Troubleshooting
+
+**LSP not starting** — verify the SSH alias works:
+```bash
+ssh lima-devbox echo ok
+```
+
+**Port changed after restart** — run `limaproj use <name>` again to refresh `~/.ssh/conf.d/lima-devbox`.
+
+**Slow LSP startup** — SSH connection setup on every LSP request can add latency. Add a `ControlMaster`
+entry for `lima-devbox` to `~/.ssh/config` to reuse the connection:
+```
+Host lima-devbox
+  ControlMaster auto
+  ControlPath ~/.ssh/lima-devbox.sock
+  ControlPersist 10m
+```
+
 ## Notes
 
 - The wrapper defaults to an amd64 Debian image; on Apple silicon, pass the arm64 image as above.
