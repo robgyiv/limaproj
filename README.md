@@ -52,7 +52,7 @@ cd /workspace
 - **trusted**: repo mount + networking, installs build tools
 - **untrusted**: repo mount + networking, minimal packages
 - **airgap**: repo mount, no networking
-- **devbox**: repo mount + networking, installs Docker CE, Python 3 + uv, Node.js LTS + pnpm
+- **devbox**: repo mount + networking, installs Docker CE (apt) + Nix package manager; provisions Python 3 + uv, Node.js LTS + pnpm, and LSP servers via Nix
 
 "Networking" means outbound internet access from the VM. The repo mount (`/workspace`) is present on
 all policies regardless — it is controlled by the `mounts:` key, not the network config.
@@ -122,12 +122,15 @@ All Neovim LSP clients share the single `lima-devbox` alias; switching it is eno
 
 ### What's installed on the VM
 
-| Server | Binary path |
+| Tool | Installed via |
 |---|---|
-| `pyright` | `/home/robbie.guest/.local/bin/pyright-langserver` |
-| `typescript-language-server` | `/home/robbie.guest/.local/share/pnpm/typescript-language-server` |
+| `python3`, `uv` | Nix (`nixpkgs#python3`, `nixpkgs#uv`) |
+| `node`, `pnpm` | Nix (`nixpkgs#nodejs`, `nixpkgs#pnpm`) |
+| `pyright-langserver` | Nix (`nixpkgs#pyright`) |
+| `typescript-language-server` | Nix (`nixpkgs#typescript-language-server`) |
+| Docker CE | apt (needs systemd service management) |
 
-The paths are stable across all devbox VMs — Lima always uses `<username>.guest` as the home dir.
+All Nix-managed binaries land in `~/.nix-profile/bin/`, which is on `PATH` for login shells.
 
 ### Troubleshooting
 

@@ -1,6 +1,7 @@
 # devbox.yaml
 # Python + Node development environment.
-# Installs: Docker CE, Python 3 + uv, Node.js LTS + pnpm (via corepack)
+# System: Docker CE (apt), Nix package manager (Determinate installer)
+# User tools: Python 3 + uv, Node.js LTS + pnpm, LSP servers (via Nix)
 
 provision:
   - mode: system
@@ -9,14 +10,11 @@ provision:
 
       apt-get update
       apt-get install -y \
-        git \
         ca-certificates \
         curl \
         gnupg \
         lsb-release \
-        build-essential \
-        python3 \
-        python3-pip
+        xz-utils
 
       # --- Docker CE (official apt repo) ---
       install -m 0755 -d /etc/apt/keyrings
@@ -41,19 +39,6 @@ provision:
       systemctl enable docker
       systemctl start docker
 
-      # --- uv (system-wide via pip) ---
-      pip3 install --break-system-packages uv
-
-      # --- Node.js LTS (NodeSource) ---
-      curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
-      apt-get install -y nodejs
-
-      # Enable corepack so the lima user can activate pnpm
-      corepack enable
-
-      # --- python -> python3 symlink ---
-      ln -sf /usr/bin/python3 /usr/local/bin/python
-
       # Add the Lima user to the docker group.
       # Lima mirrors the host macOS UID into the VM (typically 501, not 1000).
       # Match on login shell instead of UID range — only real interactive users
@@ -73,16 +58,25 @@ provision:
       systemctl daemon-reload
       systemctl restart docker.socket
 
+      # --- Nix (Determinate installer, multi-user daemon mode) ---
+      curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix \
+        | sh -s -- install linux --init systemd --no-confirm
+
   - mode: user
     script: |
       set -eux
 
-      # --- pnpm via corepack ---
-      corepack prepare pnpm@latest --activate
+      export PATH="/nix/var/nix/profiles/default/bin:$HOME/.nix-profile/bin:$PATH"
 
-      # Set up pnpm home dir and PATH for non-interactive use
-      pnpm setup
+      # Persist Nix in PATH for all future SSH sessions
+      echo 'export PATH="/nix/var/nix/profiles/default/bin:$HOME/.nix-profile/bin:$PATH"' >> ~/.bashrc
 
-      # LSP servers
-      uv tool install pyright
-      pnpm add -g typescript typescript-language-server
+      # Dev tools via Nix — flakes enabled by default with Determinate installer
+      nix profile install \
+        nixpkgs#python3 \
+        nixpkgs#uv \
+        nixpkgs#nodejs \
+        nixpkgs#pnpm \
+        nixpkgs#pyright \
+        nixpkgs#typescript-language-server \
+        nixpkgs#typescript
