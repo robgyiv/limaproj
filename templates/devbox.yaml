@@ -62,6 +62,7 @@ provision:
       curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix \
         | sh -s -- install linux --init systemd --no-confirm
 
+
   - mode: user
     script: |
       set -eux

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+import re
 import subprocess
+import sys
 from pathlib import Path
 from textwrap import dedent
-import sys
-import re
 from collections import OrderedDict
 
 DEFAULT_IMAGE = "https://cloud.debian.org/cdimage/cloud/trixie/20260112-2355/debian-13-generic-arm64-20260112-2355.qcow2"
@@ -108,6 +108,10 @@ def main():
     c.add_argument("--memory", default="6GiB")
     c.add_argument("--disk", default="30GiB")
 
+    cwd_p = sub.add_parser("cwd", help="Switch /workspace in a running devbox VM")
+    cwd_p.add_argument("name", help="VM name")
+    cwd_p.add_argument("path", nargs="?", default=None, help="Host path to mount as /workspace (default: cwd)")
+
     u = sub.add_parser("use", help="Set active devbox VM for Neovim remote LSP")
     u.add_argument("name", help="VM name, e.g. nory-challenge")
 
@@ -197,6 +201,36 @@ def main():
         # Create VM from file + ensure name
         run(["limactl", "create", "--name", name, str(out_yaml)])
         print(f"Created {name} ({args.policy}) mounting {repo} -> {DEFAULT_SHELL_CWD}")
+        return
+
+    if args.cmd == "cwd":
+        name = args.name
+        host_path = Path(args.path).expanduser().resolve() if args.path else Path.cwd()
+
+        if not host_path.exists():
+            print(f"Path does not exist: {host_path}", file=sys.stderr)
+            sys.exit(2)
+
+        # Update mount location in our project YAML and Lima's instance YAML
+        for yaml_path in [
+            projects / name / "lima.yaml",
+            Path.home() / ".lima" / name / "lima.yaml",
+        ]:
+            if not yaml_path.exists():
+                print(f"No config found at {yaml_path}", file=sys.stderr)
+                sys.exit(2)
+            text = yaml_path.read_text(encoding="utf-8")
+            new_text = re.sub(
+                r'(?m)^(\s*-\s*location:\s*)"[^"]*"',
+                f'\\1"{host_path}"',
+                text,
+                count=1,
+            )
+            yaml_path.write_text(new_text, encoding="utf-8")
+
+        run(["limactl", "stop", name])
+        run(["limactl", "start", name])
+        print(f"Workspace → {host_path}")
         return
 
     if args.cmd == "use":

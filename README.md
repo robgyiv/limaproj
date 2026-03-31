@@ -52,7 +52,7 @@ cd /workspace
 - **trusted**: repo mount + networking, installs build tools
 - **untrusted**: repo mount + networking, minimal packages
 - **airgap**: repo mount, no networking
-- **devbox**: repo mount + networking, installs Docker CE (apt) + Nix package manager; provisions Python 3 + uv, Node.js LTS + pnpm, and LSP servers via Nix
+- **devbox**: long-lived VM; installs Docker CE + Nix; provisions Python 3 + uv, Node.js LTS + pnpm, LSP servers. Mounts the directory `create` is run from; use `limaproj cwd` to switch project (stops, remounts, restarts)
 
 "Networking" means outbound internet access from the VM. The repo mount (`/workspace`) is present on
 all policies regardless — it is controlled by the `mounts:` key, not the network config.
@@ -153,6 +153,15 @@ Host lima-devbox
 ## Notes
 
 - The wrapper defaults to an amd64 Debian image; on Apple silicon, pass the arm64 image as above.
+- Switch the active project on a devbox VM with:
+
+```bash
+limaproj cwd my-devbox                        # use current directory
+limaproj cwd my-devbox ~/projects/other-repo  # use explicit path
+```
+
+  This updates the mount in the Lima config, stops the VM, and restarts it. The VM disk (Nix profile, Docker images, etc.) is preserved.
+
 - You can stop and delete VMs with:
 
 ```bash
